@@ -2,6 +2,7 @@ package com.example.library;
 
 import com.example.library.entity.Book;
 import com.example.library.repository.BookRepository;
+import com.example.library.repository.BorrowRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -35,8 +37,12 @@ class LibraryApplicationTests {
 	@Autowired
 	private BookRepository bookRepository;
 
+	@Autowired
+	private BorrowRepository borrowRepository;
+
 	@BeforeEach
 	void setUp() throws IOException {
+		borrowRepository.deleteAll();
 		bookRepository.deleteAll();
 		deleteUploads();
 	}
@@ -113,6 +119,31 @@ class LibraryApplicationTests {
 						.content("{\"stock\":12}"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.stock").value(12));
+	}
+
+	@Test
+	void createBorrowWithMissingBookReturnsValidationError() throws Exception {
+		mockMvc.perform(post("/api/borrows")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{\"username\":\"nguyen\",\"bookId\":999}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.message").value("Sách không tồn tại trong hệ thống"))
+				.andExpect(jsonPath("$.timestamp").exists());
+
+		assertTrue(borrowRepository.findAll().isEmpty());
+	}
+
+	@Test
+	void createBorrowWithExistingBookCreatesBorrow() throws Exception {
+		Book book = saveBook(4);
+
+		mockMvc.perform(post("/api/borrows")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{\"username\":\"nguyen\",\"bookId\":" + book.getId() + "}"))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.username").value("nguyen"))
+				.andExpect(jsonPath("$.bookId").value(book.getId()));
 	}
 
 	private Book saveBook(Integer stock) {

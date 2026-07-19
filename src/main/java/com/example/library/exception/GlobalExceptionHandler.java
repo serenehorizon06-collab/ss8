@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -31,7 +32,16 @@ public class GlobalExceptionHandler {
         String message = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .map(error -> {
+                    boolean existingBookIdError = Arrays.stream(error.getCodes())
+                            .anyMatch(code -> code.startsWith("ExistingBookId"));
+
+                    if (existingBookIdError) {
+                        return error.getDefaultMessage();
+                    }
+
+                    return error.getField() + ": " + error.getDefaultMessage();
+                })
                 .collect(Collectors.joining("; "));
 
         ErrorResponse response = new ErrorResponse(
