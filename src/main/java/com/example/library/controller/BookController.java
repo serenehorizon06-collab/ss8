@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +33,12 @@ public class BookController {
     public ResponseEntity<Book> createBook(@ModelAttribute BookCreateDTO dto) throws IOException {
         Book book = bookService.createBook(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(book);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Book> getBookById(@PathVariable Long id) {
+        Book book = bookService.findBookById(id);
+        return ResponseEntity.ok(book);
     }
 
     @PatchMapping("/update/{id}")

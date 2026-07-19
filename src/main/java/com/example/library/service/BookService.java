@@ -40,12 +40,16 @@ public class BookService {
     }
 
     public Book updateBook(Long id, BookUpdateStockDTO dto) {
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Book with id " + id + " not found"));
+        Book book = findBookById(id);
 
         book.setStock(dto.getStock());
 
         return bookRepository.save(book);
+    }
+
+    public Book findBookById(Long id) {
+        return bookRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
     }
 
     private String saveCoverImage(MultipartFile coverImage) throws IOException {
